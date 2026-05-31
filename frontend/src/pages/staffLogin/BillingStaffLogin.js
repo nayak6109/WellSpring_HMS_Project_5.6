@@ -30,7 +30,7 @@ export default function BillingStaffLogin() {
         setError("");
 
         try {
-            const res = await axios.post("http://localhost:8080/api/auth/login", form);
+            const res = await axios.post("/api/auth/login", form);
             
             localStorage.setItem("user", JSON.stringify(res.data));
             localStorage.setItem("token", res.data.token);

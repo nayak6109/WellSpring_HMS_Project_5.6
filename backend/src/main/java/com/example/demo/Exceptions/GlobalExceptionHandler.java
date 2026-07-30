@@ -1,16 +1,15 @@
 package com.example.demo.Exceptions;
 
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
-
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -33,10 +32,10 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
 
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
-    // ✅ Validation Errors (DTO validations)
+    // ✅ DTO Validation Errors
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationErrors(
             MethodArgumentNotValidException ex,
@@ -49,17 +48,33 @@ public class GlobalExceptionHandler {
         );
 
         Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", java.time.LocalDateTime.now());
+        response.put("timestamp", LocalDateTime.now());
         response.put("status", HttpStatus.BAD_REQUEST.value());
         response.put("error", "VALIDATION_FAILED");
         response.put("message", "Input validation failed");
         response.put("path", request.getRequestURI());
         response.put("fieldErrors", fieldErrors);
 
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        return ResponseEntity.badRequest().body(response);
     }
 
-    // ✅ Wrong username in login
+    // ✅ Constraint Validation Errors
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Object> handleConstraintValidation(
+            ConstraintViolationException ex,
+            HttpServletRequest request) {
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("error", "VALIDATION_FAILED");
+        body.put("message", ex.getMessage());
+        body.put("path", request.getRequestURI());
+
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    // ✅ Invalid Username
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleUsernameNotFound(
             UsernameNotFoundException ex,
@@ -72,10 +87,10 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
 
-        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
-    // ✅ Role not allowed
+    // ✅ Access Denied
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiErrorResponse> handleAccessDenied(
             AccessDeniedException ex,
@@ -88,10 +103,26 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
 
-        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 
-    // ✅ Generic / runtime exception fallback
+    // ✅ Business Exceptions
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiErrorResponse> handleBusinessExceptions(
+            RuntimeException ex,
+            HttpServletRequest request) {
+
+        ApiErrorResponse error = new ApiErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "BUSINESS_ERROR",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    // ✅ Fallback Exception
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleAllExceptions(
             Exception ex,
@@ -104,39 +135,6 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
 
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
-    
- // ✅ Business Logic Errors (Specifically for Stock Out)
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiErrorResponse> handleBusinessExceptions(
-            RuntimeException ex, 
-            HttpServletRequest request) {
-
-        ApiErrorResponse error = new ApiErrorResponse(
-                HttpStatus.BAD_REQUEST.value(), // 400 use karein alerts ke liye
-                "INSUFFICIENT_STOCK",
-                ex.getMessage(), // Isme asli msg aayega: "Stock khatam! Pantoprazole..."
-                request.getRequestURI()
-        );
-
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
-    }
-    
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<Object> handleValidationErrors(ConstraintViolationException ex) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        
-        // ❌ BUG: This is likely hardcoded somewhere in this method!
-        body.put("error", "INSUFFICIENT_STOCK"); 
-        
-        // Instead, dynamically fetch the error type or use a generic "BAD_REQUEST"
-        body.put("error", "VALIDATION_FAILED"); 
-        body.put("message", ex.getMessage());
-
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
-    }
- 
 }

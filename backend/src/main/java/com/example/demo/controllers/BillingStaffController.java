@@ -62,7 +62,7 @@ public class BillingStaffController {
     
     @GetMapping("/me")
     public ResponseEntity<BillingStaffDto> getLoggedInStaff(Authentication authentication) {
-
+    	System.out.println("AUTH NAME = " + authentication.getName());
         String username = authentication.getName();
         return ResponseEntity.ok(service.getByUsername(username));
     }

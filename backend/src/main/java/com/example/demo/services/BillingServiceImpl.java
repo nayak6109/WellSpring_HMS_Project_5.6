@@ -11,6 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.demo.Exceptions.ResourceNotFoundException;
 import com.example.demo.dto.*;
 import com.example.demo.entities.*;
+import com.example.demo.model.PaymentMode;
+import com.example.demo.payment.PaymentStrategy;
+import com.example.demo.payment.PaymentStrategyFactory;
 import com.example.demo.repository.*;
 
 @Service
@@ -19,6 +22,8 @@ public class BillingServiceImpl implements BillingService {
     @Autowired private VisitRepository visitRepository;
     @Autowired private BillRepository billRepository;
     @Autowired private MedicineRepository medicineRepository;
+    @Autowired private PaymentStrategyFactory paymentStrategyFactory;
+    
 
     @Override
     @Transactional
@@ -87,9 +92,17 @@ public class BillingServiceImpl implements BillingService {
         bill.setPharmacyTotal(newMedTotal);
         bill.setLabTotal(newLabTotal);
         bill.setGrandTotal(newMedTotal + newLabTotal);
-        bill.setPaid(true);
-        bill.setPaymentMode(paymentMode);
         
+        PaymentStrategy strategy =
+                paymentStrategyFactory
+                        .getStrategy(paymentMode);
+
+        strategy.processPayment(bill);
+        
+        bill.setPaid(true);
+        bill.setPaymentMode(
+        	    PaymentMode.valueOf(paymentMode.toUpperCase())
+        	);    
         Bill savedBill = billRepository.save(bill);
         
         // Final response mein sirf paid items bhej rahe hain

@@ -5,7 +5,7 @@ public enum Role {
     ROLE_DOCTOR,
     ROLE_PATIENT,
     ROLE_PHARMACY,
-    ROLE_BILLING,
+    ROLE_BILLING, 
     ROLE_APPOINTMENT,
     ROLE_LAB
 }

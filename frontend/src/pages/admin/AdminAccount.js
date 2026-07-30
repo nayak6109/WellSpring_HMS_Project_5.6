@@ -1,4 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
+
+import { useQuery } from "@tanstack/react-query";
+import { getMyProfile } from "../../services/authService";
+
 import api from "../../services/api";
 import "../../styles/accountProfile.css";
 import "../../styles/global.css"
@@ -42,7 +46,23 @@ export default function AdminAccount() {
   const token = localStorage.getItem("token");
   const authHeader = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
 
-  const [admin, setAdmin] = useState({});
+  const {
+  data: admin,
+  isLoading,
+  isError,
+  error,
+} = useQuery({
+
+  queryKey:["adminProfile"],
+
+  queryFn:getMyProfile,
+
+  staleTime:30 * 60 * 1000,
+
+  refetchOnWindowFocus:false
+
+});
+  
   const [doctors, setDoctors] = useState([]);
   const [patients, setPatients] = useState([]);
   const [pharmacyStaff, setPharmacyStaff] = useState([]);
@@ -58,30 +78,27 @@ export default function AdminAccount() {
 
   const [search, setSearch] = useState(""); // 🔍 NEW
 
-  const [location,setLocation] = useState(() => {
-  const saved = localStorage.getItem("myLocation");
-  return saved ? JSON.parse(saved) : null;
-     });
+ const [location, setLocation] = useState(null);
 
+  
   /* ================= INITIAL LOAD ================= */
   useEffect(() => {
     if (!token) return;
 
     const loadDashboard = async () => {
       try {
-        const [ adminRes,doctorsRes, patientsRes,pharmacyRes,billingRes,appointmentStaffRes, labStaffRes,appointmentsRes,locationRes] = await Promise.all([
-                                   api.get("/auth/me", authHeader),
+        const [doctorsRes, patientsRes,pharmacyRes,billingRes,appointmentStaffRes, labStaffRes,appointmentsRes,locationRes] = await Promise.all([
+                                   
                                    api.get("/doctors", authHeader),
                                    api.get("/patients", authHeader),
                                    api.get("/pharmacy-staff", authHeader),
                                    api.get("/billing-staff", authHeader),
-                                   api.get("appointment-staff", authHeader),
+                                   api.get("/appointment-staff", authHeader),
                                    api.get("/lab-staff", authHeader),
                                    api.get("/appointments", authHeader),
                                    api.get("/hospital/location", authHeader)
                                 ]);
 
-        setAdmin(adminRes.data);
         setDoctors(doctorsRes.data);
         setPatients(patientsRes.data);
         setPharmacyStaff(pharmacyRes.data);
@@ -91,9 +108,14 @@ export default function AdminAccount() {
         setAppointments(appointmentsRes.data);
           setLocation(locationRes.data); // ✅ Set hospital location
       } catch (err) {
-         console.error("Dashboard error:", err.response || err);
-        showAlert("error", "Failed to load admin dashboard ❌");
-      }
+    console.log(err);
+
+    console.log("Status:", err.response?.status);
+    console.log("URL:", err.config?.url);
+    console.log("Response:", err.response?.data);
+
+    showAlert("error", "Failed to load admin dashboard ❌");
+}
     };
 
     loadDashboard();
@@ -191,6 +213,19 @@ const fetchAppointments = async () => {
     }
   };
 
+  if(isLoading){
+  return <h3>Loading admin profile...</h3>;
+}
+
+if(isError){
+  console.log("Profile error:",error);
+  return <h3>Failed to load profile</h3>;
+}
+
+if(!admin){
+  return <h3>No admin data found</h3>;
+}
+
   return (
    <div className="doctor-profile-container admin-dashboard">
 
@@ -205,7 +240,9 @@ const fetchAppointments = async () => {
           <span className="profile-subtitle">Hospital Management System</span>
         </div>
         <span className="status-badge success">ACTIVE</span>
+        
       </div>
+      
 
       <div className="profile-body">
         <ProfileField label="Username" value={admin.username} />
@@ -562,20 +599,32 @@ const fetchAppointments = async () => {
           />
         </div>
 
-        <button
-          className="btn-primary full-width"
-          onClick={() => {
-            if (!location?.lat || !location?.lng) {
-              showAlert("error", "Please enter valid latitude & longitude");
-              return;
-            }
-            localStorage.setItem("myLocation", JSON.stringify(location));
-            showAlert("success", "Hospital location saved ✅");
-            setActivePage(""); // close modal
-          }}
-        >
-          Save Hospital Location
-        </button>
+       <button
+  className="btn-primary full-width"
+  onClick={async () => {
+    if (location?.lat == null || location?.lng == null) {
+      showAlert("error", "Please enter valid latitude & longitude");
+      return;
+    }
+
+    try {
+      await api.post(
+        "/hospital/location",
+        {
+          lat: location.lat,
+          lng: location.lng,
+        },
+        authHeader
+      );
+
+      showAlert("success", "Hospital location saved ✅");
+      setActivePage("");
+    } catch (err) {
+      console.error(err);
+      showAlert("error", "Failed to save hospital location ❌");
+    }
+  }}> Save Hospital Location
+     </button>
       </div>
     </div>
   </div>
@@ -704,5 +753,6 @@ const DataTable = ({ title, headers, data, renderRow }) => {
         </table>
       )}
     </div>
+
   );
 };

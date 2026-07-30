@@ -14,4 +14,19 @@ export const loginUser = async (username, password) => {
     console.error("Login failed", error);
     return false;
   }
+
+};
+
+// GET USER PROFILE
+export const getMyProfile = async () => {
+
+  const token = localStorage.getItem("token");
+
+  const response = await api.get("/auth/me", {
+    headers:{
+      Authorization:`Bearer ${token}`
+    }
+  });
+
+  return response.data;
 };

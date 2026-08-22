@@ -8,7 +8,10 @@ import com.example.demo.dto.HospitalLocationDTO;
 import com.example.demo.entities.HospitalLocation;
 import com.example.demo.repository.HospitalLocationRepository;
 
+import jakarta.transaction.Transactional;
+
 @Service
+@Transactional
 public class HospitalLocationServiceImpl implements HospitalLocationService {
 
     private final HospitalLocationRepository repository;

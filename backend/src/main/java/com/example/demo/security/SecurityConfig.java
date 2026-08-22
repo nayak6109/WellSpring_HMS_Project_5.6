@@ -46,6 +46,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/doctors/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/slots/**").permitAll()
                 
+             // ⬇️ YE DOWNO LINES ADD KAREIN (Sahi URL path match karke) ⬇️
+                .requestMatchers(HttpMethod.GET, "/api/location/**").permitAll() // Location fetch karna sabke liye open hoga
+                .requestMatchers(HttpMethod.POST, "/api/location/**").hasRole("ADMIN") // Location set/update sirf Admin kar sake
+                
                 // Doctor endpoints
                 .requestMatchers("/api/doctor/**").hasRole("DOCTOR")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")

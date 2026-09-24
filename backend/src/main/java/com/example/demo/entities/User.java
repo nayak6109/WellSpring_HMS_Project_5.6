@@ -39,7 +39,7 @@ public class User implements UserDetails {
     private String email;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, length = 60)
     private Role role;
 
     // ----------------------------

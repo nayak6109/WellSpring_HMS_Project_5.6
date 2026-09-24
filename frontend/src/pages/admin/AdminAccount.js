@@ -231,35 +231,72 @@ export default function AdminAccount() {
       </div>
 
       {/* ================= DOCTORS TABLE ================= */}
-      {activePage === "DOCTORS" && (
-        <div className="doctors-fullwidth">
-          <DataTable
-            title="Doctors List"
-            headers={["Doctor ID", "Name", "Specialization", "Experience", "Available", "Visiting Hour", "Visiting Days", "Schedule", "Action"]}
-            data={filteredDoctors}
-            renderRow={(d) => {
-              const visitingHour = d.schedule?.startTime && d.schedule?.endTime ? formatTimeRange(d.schedule.startTime, d.schedule.endTime) : "Not Set";
-              const visitingDays = d.schedule?.days?.length > 0 ? d.schedule.days.map((day) => day.charAt(0) + day.slice(1).toLowerCase()).join(", ") : "Not Set";
-              const today = new Date().toLocaleString("en-US", { weekday: "long" }).toUpperCase();
-              const availableToday = d.available && d.schedule?.days?.includes(today);
+{activePage === "DOCTORS" && (
+  <div className="doctors-fullwidth">
+    <DataTable
+      title="Doctors List"
+      headers={[
+        "Doctor ID",
+        "Name",
+        "Specialization",
+        "Experience",
+        "Available",
+        "Visiting Hour",
+        "Visiting Days",
+        "Schedule",
+        "Action"
+      ]}
+      data={doctors} // 👈 filteredDoctors ki jagah direct doctors pass karein kyunki DataTable ke andar khud ki filter/search state bani hui hai
+      renderRow={(d) => {
+        const visitingHour =
+          d.schedule?.startTime && d.schedule?.endTime
+            ? formatTimeRange(d.schedule.startTime, d.schedule.endTime)
+            : "Not Set";
 
-              return (
-                <>
-                  <td><span style={{ color: "#64748b" }}>#</span>{d.id}</td>
-                  <td>{d.name}</td>
-                  <td>{d.specialization}</td>
-                  <td>{d.experience} yrs</td>
-                  <td><span className={availableToday ? "status-active" : "status-inactive"}>{availableToday ? "● Available" : "○ Offline"}</span></td>
-                  <td><div className="visiting-hour-box">{visitingHour}</div></td>
-                  <td><div className="visiting-hour-box" style={{ background: "#f0fdf4", color: "#15803d", borderColor: "#dcfce7" }}>{visitingDays}</div></td>
-                  <td><button className="btn-schedule" onClick={() => openModal(MODAL.DOCTOR_SCHEDULE, d)}>📅 Schedule</button></td>
-                  <td><button className="btn-edit-doctor" onClick={() => openModal(MODAL.DOCTOR_UPDATE, d)}>✏️ Edit</button></td>
-                </>
-              );
-            }}
-          />
-        </div>
-      )}
+        const visitingDays =
+          d.schedule?.days?.length > 0
+            ? d.schedule.days.map((day) => day.charAt(0) + day.slice(1).toLowerCase()).join(", ")
+            : "Not Set";
+
+        const today = new Date().toLocaleString("en-US", { weekday: "long" }).toUpperCase();
+        const availableToday = d.available && d.schedule?.days?.includes(today);
+
+        return (
+          <React.Fragment key={d.id}>
+            <td><span style={{ color: "#64748b" }}>#</span>{d.id}</td>
+            <td>{d.name}</td>
+            <td>{d.specialization}</td>
+            <td>{d.experience} yrs</td>
+            <td>
+              <span className={availableToday ? "status-active" : "status-inactive"}>
+                {availableToday ? "● Available" : "○ Offline"}
+              </span>
+            </td>
+            <td><div className="visiting-hour-box">{visitingHour}</div></td>
+            <td>
+              <div
+                className="visiting-hour-box"
+                style={{ background: "#f0fdf4", color: "#15803d", borderColor: "#dcfce7" }}
+              >
+                {visitingDays}
+              </div>
+            </td>
+            <td>
+              <button className="btn-schedule" onClick={() => openModal(MODAL.DOCTOR_SCHEDULE, d)}>
+                📅 Schedule
+              </button>
+            </td>
+            <td>
+              <button className="btn-edit-doctor" onClick={() => openModal(MODAL.DOCTOR_UPDATE, d)}>
+                ✏️ Edit
+              </button>
+            </td>
+          </React.Fragment>
+        );
+      }}
+    /> 
+  </div>
+)}
 
       {/* ================= PHARMACY STAFF TABLE ================= */}
       {activePage === "PHARMACY" && (
@@ -451,26 +488,47 @@ export default function AdminAccount() {
         </div>
       )}
 
-      {/* ================= SHOW LOCATION ================= */}
+   {/* ================= SHOW LOCATION ================= */}
       {activePage === "SHOW_LOCATION" && (
         <div className="appointments-card">
-          <h3>📍 Hospital & My Location</h3>
-          <div className="location-display-grid">
-            <div className="location-box">
+          <h3>📍 Hospital & Location Details</h3>
+          <div className="location-display-grid" style={{ marginTop: "15px" }}>
+            <div className="location-box" style={{ padding: "20px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
               <h4>🏥 SpringWell Hospital Location</h4>
               {location ? (
-                <>
-                  <p><strong>Latitude:</strong> {location.lat}</p>
-                  <p><strong>Longitude:</strong> {location.lng}</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "10px" }}>
+                  <p><strong>Hospital Name:</strong> {location.hospitalName || location.name || "SpringWell Hospital"}</p>
+                  <p><strong>Latitude:</strong> {location.lat ?? location.latitude ?? "N/A"}</p>
+                  <p><strong>Longitude:</strong> {location.lng ?? location.longitude ?? "N/A"}</p>
+                  
+                  {/* Address Details */}
+                  {(location.address || location.formattedAddress || location.city) && (
+                    <p>
+                      <strong>Address:</strong>{" "}
+                      {location.address ||
+                        location.formattedAddress ||
+                        `${location.city || ""}, ${location.state || ""} ${location.pincode || ""}`.trim()}
+                    </p>
+                  )}
+
                   <button
                     className="btn-primary full-width"
-                    onClick={() => window.open(`https://www.google.com/maps?q=${location.lat},${location.lng}`, "_blank")}
+                    style={{ marginTop: "15px" }}
+                    onClick={() => {
+                      const lat = location.lat ?? location.latitude;
+                      const lng = location.lng ?? location.longitude;
+                      if (lat && lng) {
+                        window.open(`https://www.google.com/maps?q=${lat},${lng}`, "_blank");
+                      } else {
+                        showAlert("error", "Invalid coordinates for Google Maps");
+                      }
+                    }}
                   >
-                    🗺 View Hospital
+                    🗺 View Hospital on Google Maps
                   </button>
-                </>
+                </div>
               ) : (
-                <p>No hospital location set</p>
+                <p style={{ color: "#64748b", marginTop: "10px" }}>No hospital location data set yet.</p>
               )}
             </div>
           </div>

@@ -1,5 +1,5 @@
-
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 /* ===== ADMIN ===== */
 import AdminAccount from "./pages/admin/AdminAccount";
@@ -50,6 +50,18 @@ import PrivateRoute from "./routes/PrivateRoute";
 import Navbar from "./components/common/Navbar";
 import "./styles/global.css";
 
+// Global Cache Configuration Setup
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes tak data ko fresh rakhega (DB hit completely band)
+      gcTime: 10 * 60 * 1000, // 10 minutes tak cache memory me rakhega
+      refetchOnWindowFocus: false, // Window/Tab switch karne par unwanted background re-fetch band
+      retry: 1,
+    },
+  },
+});
+
 function Layout() {
   return (
     <>
@@ -61,198 +73,192 @@ function Layout() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<Layout />}>
+            {/* ===== PUBLIC ===== */}
+            <Route path="/" element={<WellSpringHome />} />
+            <Route path="/doctors" element={<DoctorList />} />
+            <Route path="/contact" element={<Contact />} />
 
-        <Route element={<Layout />}>
+            {/* ===== LOGIN ===== */}
+            <Route path="/login" element={<LoginSelect />} />
+            <Route path="/login/admin" element={<AdminLogin />} />
+            <Route path="/login/doctor" element={<DoctorLogin />} />
+            <Route path="/login/patient" element={<PatientLogin />} />
+            <Route path="/patient-register" element={<PatientRegister />} />
+            <Route path="/login/appointment" element={<AppointmentLogin />} />
+            <Route path="/login/pharmacy" element={<PharmacyLogin />} />
+            <Route path="/login/billing" element={<BillingLogin />} />
+            <Route path="/login/lab" element={<LabLogin />} />
 
-          {/* ===== PUBLIC ===== */}
-          <Route path="/" element={<WellSpringHome />} />
-          <Route path="/doctors" element={<DoctorList />} />
-          <Route path="/contact" element={<Contact />} />
-
-          {/* ===== LOGIN ===== */}
-          <Route path="/login" element={<LoginSelect />} />
-          <Route path="/login/admin" element={<AdminLogin />} />
-          <Route path="/login/doctor" element={<DoctorLogin />} />
-          <Route path="/login/patient" element={<PatientLogin />} />
-          <Route path="/patient-register" element={<PatientRegister />} />
-          <Route path="/login/appointment" element={<AppointmentLogin />} />
-          <Route path="/login/pharmacy" element={<PharmacyLogin />} />
-          <Route path="/login/billing" element={<BillingLogin />} />
-          <Route path="/login/lab" element={<LabLogin />} />
-
-          {/* ===== ADMIN ===== */}
-          <Route
-            path="/admin/account"
-            element={
-              <PrivateRoute roleRequired={["ADMIN"]}>
-                <AdminAccount />
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="/admin/doctor-schedule"
-            element={
-              <PrivateRoute roleRequired={["ADMIN"]}>
-                <DoctorSchedulePage />
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="/admin/inbox"
-            element={
-              <PrivateRoute roleRequired={["ADMIN"]}>
-                <AdminInbox />
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="/admin/reply/:id"
-            element={
-              <PrivateRoute roleRequired={["ADMIN"]}>
-                <AdminReply />
-              </PrivateRoute>
-            }
-          />
-
-          {/* ===== DOCTOR ===== */}
-          <Route
-            path="/doctor/account"
-            element={
-              <PrivateRoute roleRequired={["DOCTOR"]}>
-                <DoctorAccount />
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="/doctor/consultation/:id"
-            element={
-              <PrivateRoute roleRequired={["DOCTOR"]}>
-                <DoctorConsultation />
-              </PrivateRoute>
-            }
-          />
-
-          <Route path="/doctor-slip/:id" 
-          element={<DoctorSlip />
-            } 
-        />
-
-         <Route
-          path="/visits/patient/:id"
-         element={
-       <PrivateRoute roleRequired={["DOCTOR"]}>
-      <VisitView />
-    </PrivateRoute>
-  }
-/>
-
-     <Route
-  path="/visits/:id"
-  element={
-    <PrivateRoute roleRequired={["DOCTOR"]}>
-      <VisitView />
-    </PrivateRoute>
-  }
-/>
+            {/* ===== ADMIN ===== */}
+            <Route
+              path="/admin/account"
+              element={
+                <PrivateRoute roleRequired={["ADMIN"]}>
+                  <AdminAccount />
+                </PrivateRoute>
+              }
+            />
 
             <Route
-               path="/visits/edit/:id"
-               element={
-                 <PrivateRoute roleRequired={["DOCTOR"]}>
-               <VisitEdit />
-             </PrivateRoute>
-              }
-          />
-
-          {/* ===== PATIENT ===== */}
-          <Route
-            path="/patient/account"
-            element={
-              <PrivateRoute roleRequired={["PATIENT"]}>
-                <PatientAccount />
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="/appointments"
-            element={
-              <PrivateRoute roleRequired={["ADMIN","PATIENT","APPOINTMENT"]}>
-                <Appointment />
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-           path="/online_book_appointment"
+              path="/admin/doctor-schedule"
               element={
-             <PrivateRoute roleRequired={["PATIENT"]}>
-            <OnlineAppointmentModal />
-             </PrivateRoute>
-             }
-        />
+                <PrivateRoute roleRequired={["ADMIN"]}>
+                  <DoctorSchedulePage />
+                </PrivateRoute>
+              }
+            />
 
-          {/* ===== APPOINTMENT STAFF ===== */}
-          <Route
-            path="/appointmentStaff/account"
-            element={
-              <PrivateRoute roleRequired={["APPOINTMENT"]}>
-                <AppointmentAccount />
-              </PrivateRoute>
-            }
-          />
+            <Route
+              path="/admin/inbox"
+              element={
+                <PrivateRoute roleRequired={["ADMIN"]}>
+                  <AdminInbox />
+                </PrivateRoute>
+              }
+            />
 
+            <Route
+              path="/admin/reply/:id"
+              element={
+                <PrivateRoute roleRequired={["ADMIN"]}>
+                  <AdminReply />
+                </PrivateRoute>
+              }
+            />
 
-          {/* ===== PHARMACY STAFF ===== */}
-          <Route
-            path="/pharmacyStaff/account"
-            element={
-              <PrivateRoute roleRequired={["PHARMACY"]}>
-                <PharmacyAccount />
-              </PrivateRoute>
-            }
-          />
+            {/* ===== DOCTOR ===== */}
+            <Route
+              path="/doctor/account"
+              element={
+                <PrivateRoute roleRequired={["DOCTOR"]}>
+                  <DoctorAccount />
+                </PrivateRoute>
+              }
+            />
 
-          {/* ===== BILLING STAFF ===== */}
-          <Route
-            path="/billingStaff/account"
-            element={
-              <PrivateRoute roleRequired={["BILLING"]}>
-                <BillingAccount />
-              </PrivateRoute>
-            }
-          />
+            <Route
+              path="/doctor/consultation/:id"
+              element={
+                <PrivateRoute roleRequired={["DOCTOR"]}>
+                  <DoctorConsultation />
+                </PrivateRoute>
+              }
+            />
 
-          {/* ===== LAB STAFF ===== */}
-             <Route
-                   path="/labStaff/account"
-                   element={
-                   <PrivateRoute roleRequired={["LAB"]}>
-                   <LabAccount />
-               </PrivateRoute>
-            }
-        />
+            <Route path="/doctor-slip/:id" element={<DoctorSlip />} />
 
-          {/* ===== COMMON DASHBOARD ===== */}
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                <Dashboard />
-              </PrivateRoute>
-            }
-          />
+            <Route
+              path="/visits/patient/:id"
+              element={
+                <PrivateRoute roleRequired={["DOCTOR"]}>
+                  <VisitView />
+                </PrivateRoute>
+              }
+            />
 
-        </Route>
+            <Route
+              path="/visits/:id"
+              element={
+                <PrivateRoute roleRequired={["DOCTOR"]}>
+                  <VisitView />
+                </PrivateRoute>
+              }
+            />
 
-      </Routes>
-    </BrowserRouter>
+            <Route
+              path="/visits/edit/:id"
+              element={
+                <PrivateRoute roleRequired={["DOCTOR"]}>
+                  <VisitEdit />
+                </PrivateRoute>
+              }
+            />
+
+            {/* ===== PATIENT ===== */}
+            <Route
+              path="/patient/account"
+              element={
+                <PrivateRoute roleRequired={["PATIENT"]}>
+                  <PatientAccount />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/appointments"
+              element={
+                <PrivateRoute roleRequired={["ADMIN", "PATIENT", "APPOINTMENT"]}>
+                  <Appointment />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/online_book_appointment"
+              element={
+                <PrivateRoute roleRequired={["PATIENT"]}>
+                  <OnlineAppointmentModal />
+                </PrivateRoute>
+              }
+            />
+
+            {/* ===== APPOINTMENT STAFF ===== */}
+            <Route
+              path="/appointmentStaff/account"
+              element={
+                <PrivateRoute roleRequired={["APPOINTMENT"]}>
+                  <AppointmentAccount />
+                </PrivateRoute>
+              }
+            />
+
+            {/* ===== PHARMACY STAFF ===== */}
+            <Route
+              path="/pharmacyStaff/account"
+              element={
+                <PrivateRoute roleRequired={["PHARMACY"]}>
+                  <PharmacyAccount />
+                </PrivateRoute>
+              }
+            />
+
+            {/* ===== BILLING STAFF ===== */}
+            <Route
+              path="/billingStaff/account"
+              element={
+                <PrivateRoute roleRequired={["BILLING"]}>
+                  <BillingAccount />
+                </PrivateRoute>
+              }
+            />
+
+            {/* ===== LAB STAFF ===== */}
+            <Route
+              path="/labStaff/account"
+              element={
+                <PrivateRoute roleRequired={["LAB"]}>
+                  <LabAccount />
+                </PrivateRoute>
+              }
+            />
+
+            {/* ===== COMMON DASHBOARD ===== */}
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <Dashboard />
+                </PrivateRoute>
+              }
+            />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 

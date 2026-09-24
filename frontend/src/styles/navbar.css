@@ -4,21 +4,23 @@
   top: 0;
   left: 0;
   right: 0;
-  width: 100%;              /* ✅ Prevent shifting */
+  width: 100%;
   z-index: 9999;
-  background: rgba(30,111,92,0.95);
-  padding: 10px 0;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  background: rgba(30, 111, 92, 0.95);
+  padding: 12px 0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   font-family: 'Poppins', sans-serif;
+  backdrop-filter: blur(8px);
 }
 
 .navbar-container {
   max-width: 1200px;
   width: 90%;
-  margin: 0 auto;           /* ✅ Perfect centering */
+  margin: 0 auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 /* LOGO */
@@ -34,9 +36,10 @@
 .navbar-links {
   list-style: none;
   display: flex;
-  gap: 25px;
+  gap: 20px;
   padding: 0;
   margin: 0;
+  align-items: center;
 }
 
 .navbar-links li {
@@ -48,6 +51,13 @@
 
 .navbar-links li:hover {
   color: #ffd700;
+}
+
+/* ACTIONS */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 /* CTA BUTTON */
@@ -62,21 +72,17 @@
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: inline-block;
+  white-space: nowrap;
 }
 
-/* ZOOM IN ON HOVER */
 .navbar .btn-cta:hover {
-  transform: scale(1.01);   /* Zoom in */
-  box-shadow: 0 3px 4px  rgba(0,0,0,0.7);
+  transform: scale(1.01);
+  box-shadow: 0 3px 4px rgba(0, 0, 0, 0.4);
 }
 
-/* ZOOM OUT ON CLICK */
 .navbar .btn-cta:active {
-  transform: scale(0.95);   /* Press effect */
-  box-shadow: 0 3px 4px  rgba(0,0,0,0.7);
+  transform: scale(0.95);
 }
-
-
 
 /* LOGOUT */
 .btn-logout {
@@ -84,33 +90,13 @@
   color: white;
   padding: 8px 14px;
   border-radius: 6px;
-  margin-left: 10px;
   border: none;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .btn-logout:hover {
   background: darkred;
-}
-
-/* RESPONSIVE */
-@media (max-width: 900px) {
-  .navbar-container {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .navbar-links {
-    flex-direction: column;
-    gap: 10px;
-    align-items: center;
-  }
-
-  .navbar .btn-cta {
-    width: 100%;
-    text-align: center;
-    
-  }
 }
 
 /* Book Appointment Button Style */
@@ -118,79 +104,79 @@
   background: linear-gradient(90deg, #e4f310, #e0350a);
   color: white;
   border: none;
-  padding: 10px 14px;
+  padding: 9px 14px;
   border-radius: 5px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-right: 10px;
-}  
+  white-space: nowrap;
+}
 
 .btn-cta.book-appointment:hover {
   transform: scale(1.05);
   background: linear-gradient(90deg, #66BB6A, #388E3C);
 }
+
 .btn-cta.book-appointment:active {
   transform: scale(0.95);
-  background: linear-gradient(90deg, #388E3C, #1B5E20);
 }
 
-
- 
-
-/* ====== INBOX ICON UPDATED - SMALL VERSION ====== */
+/* INBOX ICON */
 .nav-icon {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 28px;               /* smaller width */
-  height: 18px;              /* smaller height */
-  background: #ff4d4d;        /* Red envelope body */
-  border: 2px solid #c00;     /* Darker red border */
+  width: 28px;
+  height: 18px;
+  background: #ff4d4d;
+  border: 2px solid #c00;
   border-radius: 5px;
   position: relative;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  color: #fff;
-  font-size: 16px;
+  text-decoration: none;
 }
 
-.nav-icon:hover {
-  transform: scale(1.1);
-  box-shadow: 0 3px 6px rgba(255, 77, 77, 0.6);
-}
-
-/* Envelope flap */
-.nav-icon::before {
-  content: '';
-  position: absolute;
-  top: -10px;                 /* adjusted for smaller icon */
-  left: 0;
-  width: 0;
-  height: 0;
-  border-left: 12px solid transparent;  /* proportional */
-  border-right: 12px solid transparent;
-  border-bottom: 8px solid #ff4d4d;    /* proportional */
-  transition: transform 0.3s ease;
-}
-
-/* Open state (JS toggle) */
-.nav-icon.open::before {
-  transform: rotateX(180deg);
-  border-bottom-color: #ff6666;  /* lighter red flap when open */
-}
-
-/* Wrapper for icon + text */
 .icon-wrapper {
   display: flex;
-  flex-direction: column; /* vertical alignment */
-  align-items: center;    /* center horizontally */
+  flex-direction: column;
+  align-items: center;
 }
 
-/* Text under icon */
 .icon-text {
-  margin-top: 3px;  /* slightly smaller gap for small icon */
-  font-size: 12px;  /* smaller text */
+  margin-top: 3px;
+  font-size: 11px;
   font-weight: 500;
   color: #ffffff;
+}
+
+/* ==========================================
+   MOBILE & TABLET RESPONSIVE (Max-width 900px)
+   ========================================== */
+@media (max-width: 900px) {
+  .navbar-container {
+    flex-direction: column;
+    gap: 12px;
+    padding: 5px 0;
+  }
+
+  .navbar-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    width: 100%;
+  }
+
+  .navbar-actions {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .navbar .btn-cta, 
+  .btn-cta.book-appointment,
+  .btn-logout {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
 }

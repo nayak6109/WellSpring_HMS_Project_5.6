@@ -2,89 +2,105 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./wellspringhome.css";
 import { getAvailableDoctors } from "../../services/doctorService";
-import {showAlert} from "../common/Alert.js";
-
+import { showAlert } from "../common/Alert.js";
 
 export default function WellSpringHome() {
   const navigate = useNavigate();
   const [doctors, setDoctors] = useState([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
 
   const [currentLocation, setCurrentLocation] = useState(null);
-const [hospitalLocation, setHospitalLocation] = useState(null);
+  const [hospitalLocation, setHospitalLocation] = useState(null);
 
-// Load hospital location from localStorage
-useEffect(() => {
-  const savedLocation = localStorage.getItem("myLocation");
-  if (savedLocation) {
-    setHospitalLocation(JSON.parse(savedLocation));
-  }
-}, []);
+  // Load hospital location from localStorage
+  useEffect(() => {
+    const savedLocation = localStorage.getItem("myLocation");
+    if (savedLocation) {
+      setHospitalLocation(JSON.parse(savedLocation));
+    }
+  }, []);
 
-// Function to get user's GPS
-const getCurrentLocation = () => {
-  if (!navigator.geolocation) {
-    showAlert("error", "Geolocation not supported ❌");
-    return;
-  }
+  // Function to get user's GPS
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      showAlert("error", "Geolocation not supported ❌");
+      return;
+    }
 
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      setCurrentLocation({
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-      });
-    },
-    () => showAlert("error", "Location access denied ❌")
-  );
-};
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCurrentLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      () => showAlert("error", "Location access denied ❌")
+    );
+  };
 
-useEffect(() => {
-  const fetchDoctors = async () => {
-    try {
-      const res = await getAvailableDoctors();
-      setDoctors(res.data.slice(0, 3));
-    } catch (err) {
-      console.error("Error fetching doctors", err);
-        // SweetAlert in English
-      showAlert("error", "Unable to load doctors. Please try again later.");
+  // Fetch doctors with Silent Retry (handles Render server cold start)
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchDoctorsWithRetry = async (retries = 3, delay = 3000) => {
+      try {
+        const res = await getAvailableDoctors();
+        if (isMounted) {
+          setDoctors(res.data.slice(0, 3));
+          setLoadingDoctors(false);
+        }
+      } catch (err) {
+        console.error(`Error fetching doctors (Attempts left: ${retries})`, err);
+        if (retries > 0) {
+          setTimeout(() => {
+            fetchDoctorsWithRetry(retries - 1, delay);
+          }, delay);
+        } else {
+          if (isMounted) {
+            setLoadingDoctors(false);
+            showAlert("error", "Unable to load doctors. Please try again later.");
+          }
+        }
+      }
+    };
+
+    fetchDoctorsWithRetry();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleBook = () => {
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+
+    const normalizedRole = role
+      ? role.startsWith("ROLE_")
+        ? role
+        : "ROLE_" + role
+      : null;
+
+    if (!token) {
+      showAlert("info", "🔐 Please login to book an appointment");
+      navigate("/login");
+      return;
+    }
+
+    if (normalizedRole === "ROLE_DOCTOR") {
+      showAlert("warning", "Doctors cannot book appointments");
+      return;
+    }
+
+    if (normalizedRole === "ROLE_ADMIN") {
+      navigate("/admin/account");
+      return;
+    }
+
+    if (normalizedRole === "ROLE_PATIENT") {
+      navigate("/online_book_appointment");
     }
   };
-  fetchDoctors();
-}, []);
-
-
- const handleBook = () => {
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
-
-  const normalizedRole = role
-    ? role.startsWith("ROLE_")
-      ? role
-      : "ROLE_" + role
-    : null;
-
-  if (!token) {
-    showAlert("info", "🔐 Please login to book an appointment");
-    navigate("/login");
-    return;
-  }
-
-  if (normalizedRole === "ROLE_DOCTOR") {
-    showAlert("warning","Doctors cannot book appointments");
-    return;
-  }
-
-  if (normalizedRole === "ROLE_ADMIN") {
-    // ya to modal open karo
-    // ya admin page
-    navigate("/admin/account");
-    return;
-  }
-
-  if (normalizedRole === "ROLE_PATIENT") {
-    navigate("/online_book_appointment"); // ✅ correct route
-  }
-};
 
   return (
     <div className="wellspring-hero" role="banner">
@@ -164,70 +180,77 @@ useEffect(() => {
             </div>
           </div>
 
-         <div className="footer-cta">
-  <button
-    className="btn-cta"
-    style={{ marginTop: 18 }}
-    onClick={() => showAlert("info", "Call us: +91 00000 00000")}
-  >
-    Call: +91 00000 00000
-  </button>
+          <div className="footer-cta">
+            <button
+              className="btn-cta"
+              style={{ marginTop: 18 }}
+              onClick={() => showAlert("info", "Call us: +91 00000 00000")}
+            >
+              Call: +91 00000 00000
+            </button>
 
-  {/* ===== Directions Button ===== */}
-  {hospitalLocation ? (
-    currentLocation ? (
-      <button
-        className="btn-transparent"
-        style={{ marginTop: 18 }}
-        onClick={() =>
-          window.open(
-            `https://www.google.com/maps/dir/${currentLocation.lat},${currentLocation.lng}/${hospitalLocation.lat},${hospitalLocation.lng}`,
-            "_blank"
-          )
-        }
-      >
-        🚗 Get Directions
-      </button>
-    ) : (
-      <button
-        className="btn-transparent"
-        style={{ marginTop: 18 }}
-        onClick={getCurrentLocation}
-      >
-        📡 Get My Location First
-      </button>
-    )
-  ) : (
-    <button
-      className="btn-transparent"
-      style={{ marginTop: 18 }}
-      onClick={() => showAlert("info", "Hospital location not set yet")}
-    >
-      🏥 Hospital location not set
-    </button>
-  )}
-</div>
-</div>
+            {/* ===== Directions Button ===== */}
+            {hospitalLocation ? (
+              currentLocation ? (
+                <button
+                  className="btn-transparent"
+                  style={{ marginTop: 18 }}
+                  onClick={() =>
+                    window.open(
+                      `https://www.google.com/maps/dir/${currentLocation.lat},${currentLocation.lng}/${hospitalLocation.lat},${hospitalLocation.lng}`,
+                      "_blank"
+                    )
+                  }
+                >
+                  🚗 Get Directions
+                </button>
+              ) : (
+                <button
+                  className="btn-transparent"
+                  style={{ marginTop: 18 }}
+                  onClick={getCurrentLocation}
+                >
+                  📡 Get My Location First
+                </button>
+              )
+            ) : (
+              <button
+                className="btn-transparent"
+                style={{ marginTop: 18 }}
+                onClick={() => showAlert("info", "Hospital location not set yet")}
+              >
+                🏥 Hospital location not set
+              </button>
+            )}
+          </div>
+        </div>
 
         {/* SIDEBAR DOCTOR LIST */}
         <aside className="side-card" aria-labelledby="doctors-heading">
           <h3 id="doctors-heading">Available Now</h3>
           <div className="doctor-list">
-            {doctors.map((doctor) => (
-              <div
-                key={doctor.id}
-                className="doctor"
-                onClick={() => navigate(`/doctors/${doctor.id}`)}
-              >
-                <div className="doc-avatar">
-                  {doctor.name.split(" ").map(n => n[0]).join("")}
+            {loadingDoctors ? (
+              <p style={{ padding: "10px", color: "rgba(0,0,0,0.6)" }}>Loading available doctors...</p>
+            ) : doctors.length > 0 ? (
+              doctors.map((doctor) => (
+                <div
+                  key={doctor.id}
+                  className="doctor"
+                  onClick={() => navigate(`/doctors/${doctor.id}`)}
+                >
+                  <div className="doc-avatar">
+                    {doctor.name ? doctor.name.split(" ").map((n) => n[0]).join("") : "DOC"}
+                  </div>
+                  <div className="doc-meta">
+                    <h4>{doctor.name}</h4>
+                    <p>{doctor.specialization} • {doctor.experience} yrs</p>
+                  </div>
                 </div>
-                <div className="doc-meta">
-                  <h4>{doctor.name}</h4>
-                  <p>{doctor.specialization} • {doctor.experience} yrs</p>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p style={{ padding: "10px", color: "rgba(0,0,0,0.6)" }}>No doctors available right now.</p>
+            )}
+
             <div className="doctor see-all" onClick={() => navigate("/doctors")}>
               <button className="btn-transparent">See all doctors</button>
             </div>
